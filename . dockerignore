@@ -1,0 +1,64 @@
+# Dependencies
+node_modules
+.pnpm-store
+
+# Next.js build output
+.next
+out
+build
+
+# Development files
+.git
+.gitignore
+.vscode
+.idea
+*.log
+
+# Environment files (should be passed at runtime)
+.env*
+
+# Testing
+coverage
+.nyc_output
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx
+__tests__
+__mocks__
+
+# Playwright
+test-results
+playwright-report
+blob-report
+playwright/.cache/
+playwright/.auth/
+tests
+
+# Documentation
+README.md
+docs
+*.md
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Docker files
+Dockerfile
+.dockerignore
+docker-compose.yml
+
+# CI/CD
+.github
+.gitlab-ci.yml
+.travis.yml
+
+# Misc
+.eslintcache
+*.swp
+*.swo
+*~
+.cache
+tmp
+temp

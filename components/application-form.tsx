@@ -576,10 +576,24 @@ export default function ApplicationForm({ setCurrentPage }: any) {
                 onChange={handleChange}
                 className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
               >
-                <option value="">Select Lawsuit Type</option>
+                <option disabled value="">
+                  Select Lawsuit Type
+                </option>
                 <option value="zantac">Zantac Lawsuit</option>
                 <option value="roundup">Round-Up Lawsuit</option>
                 <option value="talcum">Talcum Lawsuit</option>
+                <option value="Tylenol">Tylenol Lawsuit</option>
+                <option value="BabyFormula">Baby Formula Lawsuit</option>
+                <option value="CampLejeune">Camp Lejeune Lawsuit</option>
+                <option value="AFFF">AFFF Lawsuit</option>
+                <option value="Roblox">Roblox Lawsuit</option>
+                <option value="DepoProvera">Depo Provera Lawsuit</option>
+                <option value="HairRelaxer">Hair Relaxer Lawsuit</option>
+                <option value="HerniaMesh">Hernia Mesh Lawsuit</option>
+                <option value="RideShare">Ride-Share Lawsuit</option>
+                <option value="SexualAbuse">Sexual Abuse Lawsuit</option>
+                <option value="LDSSexualAbuse">LDS Sexual Abuse Lawsuit</option>
+                <option value="MVA"> Motor Vehicle Accident Lawsuit</option>
               </select>
             </div>
             <div>

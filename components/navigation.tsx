@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 export default function Navigation({ currentPage, setCurrentPage }: any) {
   return (
     <>
@@ -24,9 +26,11 @@ export default function Navigation({ currentPage, setCurrentPage }: any) {
       <div className="bg-blue-900 text-white">
         <div className="max-w-6xl mx-auto px-4 md:px-8 py-4">
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold tracking-tight">
-              CLAIMS ADMINISTRATOR
-            </h1>
+            <Link href="/">
+              <h1 className="text-2xl font-bold tracking-tight cursor-pointer hover:opacity-90">
+                CLAIMS ADMINISTRATOR
+              </h1>
+            </Link>
             <div className="flex gap-4 items-center">
               <button className="hover:underline text-sm">About Us</button>
               <button className="hover:underline text-sm">
