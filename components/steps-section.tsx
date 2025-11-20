@@ -222,36 +222,38 @@ export default function StepsSection() {
       </div>
 
       {/* Help section */}
-      <div className="mt-12 pt-8 border-t border-gray-300">
-        <h4 className="text-lg font-bold text-gray-900 mb-6">Need help?</h4>
+      <div className="mt-12 -mx-4 md:-mx-8 px-4 md:px-8 py-12">
+        <h2 className="text-3xl font-bold text-gray-900 mb-8">Need help?</h2>
 
-        <div className="grid md:grid-cols-2 gap-8">
-          <div>
-            <h5 className="font-bold text-gray-900 mb-2">Technical Support</h5>
-            <p className="text-gray-700 mb-2">
+        <div className="grid md:grid-cols-2 gap-6">
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <h3 className="text-xl font-bold text-gray-900 mb-4">
+              Technical Support
+            </h3>
+            <p className="text-gray-700 mb-4">
               If you have trouble using this online application, call our
               support line:
             </p>
-            <p className="font-semibold text-gray-900 mb-1">
+            <p className="text-2xl font-bold text-(--custom-color) mb-2">
               800-LAW-CLAIM (529-2524)
             </p>
-            <p className="text-sm text-gray-700 mb-2">
+            <p className="text-sm text-gray-600">
               (TTY: 711) We are here Monday through Friday, 8:00 a.m. to 8:00
               p.m. ET.
             </p>
           </div>
 
-          <div>
-            <h5 className="font-bold text-gray-900 mb-2">
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <h3 className="text-xl font-bold text-gray-900 mb-4">
               Questions about the Lawsuit
-            </h5>
-            <p className="text-gray-700">
+            </h3>
+            <p className="text-gray-700 mb-4">
               For questions specific to your settlement or case details, contact
               your accredited legal representative.
             </p>
             <a
               href="#"
-              className="text-blue-600 hover:underline inline-block mt-2"
+              className="text-(--custom-color) hover:text-blue-700 font-semibold inline-flex items-center gap-1"
             >
               Get help from a Legal Representative →
             </a>
