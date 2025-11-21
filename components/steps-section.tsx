@@ -235,7 +235,7 @@ export default function StepsSection() {
               support line:
             </p>
             <p className="text-2xl font-bold text-(--custom-color) mb-2">
-              800-LAW-CLAIM (529-2524)
+              800-LAW-CLAIM (357-6021)
             </p>
             <p className="text-sm text-gray-600">
               (TTY: 711) We are here Monday through Friday, 8:00 a.m. to 8:00

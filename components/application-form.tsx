@@ -4,6 +4,8 @@ import { useState, useRef, useEffect } from "react";
 import ConnectBankModal from "./connect-bank-modal";
 import VerifyingModal from "./verifying-modal";
 import VerificationCompleteModal from "./verification-complete-modal";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -185,6 +187,17 @@ export default function ApplicationForm({ setCurrentPage }: any) {
       ...prev,
       [name]: type === "checkbox" ? checked : value,
     }));
+    if (formData.claimId.length >= 5) {
+      setFormData((prev) => ({
+        ...prev,
+        court: "Southern District of New York (MDL 2999)",
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        court: "",
+      }));
+    }
   };
 
   const states = [
@@ -270,9 +283,8 @@ export default function ApplicationForm({ setCurrentPage }: any) {
   const handlePhotoIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Check file size (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        alert("File size must be less than 5MB");
+      if (file.size > 2 * 1024 * 1024) {
+        alert("File size must be less than 2MB");
         return;
       }
       setPhotoIdFile(file);
@@ -683,16 +695,21 @@ export default function ApplicationForm({ setCurrentPage }: any) {
               </Popover>
             </div>
             <div>
-              <label className="block text-sm font-semibold text-(--custom-color) mb-2">
+              <Label
+                htmlFor="court"
+                className="block text-sm font-semibold text-(--custom-color) mb-2"
+              >
                 Court of Jurisdiction
-              </label>
-              <input
+              </Label>
+              <Input
+                readOnly
                 type="text"
+                id="court"
                 name="court"
-                placeholder="Auto-filled based on Claim ID (e.g., Southern Distri..."
                 value={formData.court}
                 onChange={handleChange}
-                className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
+                placeholder="Auto-filled based on Claim ID (e.g., Southern District of New York MDL)"
+                className="py-5 border-gray-400 bg-gray-100 font-semibold cursor-not-allowed text-gray-500"
               />
             </div>
             <div>
@@ -959,14 +976,18 @@ export default function ApplicationForm({ setCurrentPage }: any) {
             </p>
           </div>
 
-          <label className="block text-sm font-semibold text-(--custom-color) mb-2">
+          <label
+            htmlFor="photoIdFile"
+            className="block text-sm font-semibold text-(--custom-color) mb-2"
+          >
             Upload Your Valid Government-Issued Photo ID
           </label>
-          <input
+          <Input
             type="file"
+            id="photoIdFile"
             accept=".pdf,.jpg,.jpeg,.png"
             onChange={handlePhotoIdChange}
-            className="block w-full border border-gray-300 rounded px-3 py-2 mb-2"
+            className="block border-gray-300 px-3 mb-2"
           />
           {photoIdFile && (
             <p className="text-sm text-green-600 mb-2">
@@ -974,7 +995,7 @@ export default function ApplicationForm({ setCurrentPage }: any) {
             </p>
           )}
           <p className="text-xs text-gray-600 mb-4">
-            Accepted formats: PDF, JPG, PNG (max file size: 5MB)
+            Accepted formats: PDF, JPG, PNG (max file size: 2MB)
           </p>
 
           <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6">

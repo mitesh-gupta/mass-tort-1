@@ -16,9 +16,13 @@ export default function Navigation({ currentPage, setCurrentPage }: any) {
               Here's how you know
             </button>
           </div>
-          <button className="bg-red-600 text-white px-3 py-1 rounded text-xs font-semibold hover:bg-red-700">
+          <a
+            href="tel:8883576021"
+            aria-label="Call Claim Support Team"
+            className="bg-red-600 text-white px-3 py-1 rounded text-xs font-semibold hover:bg-red-700"
+          >
             Talk to the Claim Support Team Line now
-          </button>
+          </a>
         </div>
       </div>
 
