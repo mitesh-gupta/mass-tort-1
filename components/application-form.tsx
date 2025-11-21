@@ -183,21 +183,23 @@ export default function ApplicationForm({ setCurrentPage }: any) {
 
   const handleChange = (e: any) => {
     const { name, value, type, checked } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : value,
-    }));
-    if (formData.claimId.length >= 5) {
-      setFormData((prev) => ({
+    const newValue = type === "checkbox" ? checked : value;
+
+    setFormData((prev) => {
+      const updatedData = {
         ...prev,
-        court: "Southern District of New York (MDL 2999)",
-      }));
-    } else {
-      setFormData((prev) => ({
-        ...prev,
-        court: "",
-      }));
-    }
+        [name]: newValue,
+      };
+
+      if (name === "claimId") {
+        updatedData.court =
+          newValue.length >= 5
+            ? "Southern District of New York (MDL 2999)"
+            : "";
+      }
+
+      return updatedData;
+    });
   };
 
   const states = [
@@ -283,8 +285,8 @@ export default function ApplicationForm({ setCurrentPage }: any) {
   const handlePhotoIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 2 * 1024 * 1024) {
-        alert("File size must be less than 2MB");
+      if (file.size > 5 * 1024 * 1024) {
+        alert("File size must be less than 5MB");
         return;
       }
       setPhotoIdFile(file);
@@ -995,7 +997,7 @@ export default function ApplicationForm({ setCurrentPage }: any) {
             </p>
           )}
           <p className="text-xs text-gray-600 mb-4">
-            Accepted formats: PDF, JPG, PNG (max file size: 2MB)
+            Accepted formats: PDF, JPG, PNG (max file size: 5MB)
           </p>
 
           <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6">
