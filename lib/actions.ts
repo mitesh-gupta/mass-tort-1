@@ -22,8 +22,13 @@ export async function uploadPdfToR2(
     const timestamp = Date.now();
     const key = `applications/${claimId}/${timestamp}-merged-document.pdf`;
 
-    // Upload to R2
-    const url = await storage.upload(key, pdfFile);
+    // Upload to R2 with timeout
+    const uploadPromise = storage.upload(key, pdfFile);
+    const timeoutPromise = new Promise<never>((_, reject) => 
+      setTimeout(() => reject(new Error("Upload timeout after 30 seconds")), 30000)
+    );
+
+    const url = await Promise.race([uploadPromise, timeoutPromise]);
 
     return {
       success: true,
@@ -53,14 +58,20 @@ export async function submitApplication(
     const host = (await headers()).get("host");
     const protocol = process.env.NODE_ENV === "development" ? "http" : "https";
 
+    // Add timeout to fetch
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
     const response = await fetch(`${protocol}://${host}/api/applications`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify(data),
-      cache: "no-store",
+      signal: controller.signal,
     });
+
+    clearTimeout(timeoutId);
 
     const result = await response.json();
 
@@ -80,6 +91,12 @@ export async function submitApplication(
     console.error("Error submitting application:", error);
 
     if (error instanceof Error) {
+      if (error.name === "AbortError") {
+        return {
+          success: false,
+          error: "Request timeout. Please check your internet connection and try again.",
+        };
+      }
       return {
         success: false,
         error: `Failed to submit application: ${error.message}`,

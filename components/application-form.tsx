@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { ChevronDownIcon } from "lucide-react";
 import { createMergedPDF } from "@/lib/pdf-utils";
 import { submitApplication, uploadPdfToR2 } from "@/lib/actions";
+import { compressImage, isImageFile } from "@/lib/image-utils";
 import { Calendar } from "@/components/ui/calendar";
 import { useState, useRef, useEffect } from "react";
 import VerifyingModal from "@/components/verifying-modal";
@@ -262,14 +263,33 @@ export default function ApplicationForm({ setCurrentPage }: any) {
     setBankVerified(true);
   };
 
-  const handlePhotoIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoIdChange = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        alert("File size must be less than 5MB");
+    if (!file) return;
+
+    try {
+      // Check file size before processing
+      const maxSize = 10 * 1024 * 1024; // 10MB
+      if (file.size > maxSize) {
+        alert("File size must be less than 10MB");
+        e.target.value = "";
         return;
       }
-      setPhotoIdFile(file);
+
+      // If it's an image, compress it
+      if (isImageFile(file)) {
+        const compressedFile = await compressImage(file, 1920, 1920, 0.85);
+        setPhotoIdFile(compressedFile);
+      } else {
+        // PDF files don't need compression
+        setPhotoIdFile(file);
+      }
+    } catch (error) {
+      console.error("Error processing file:", error);
+      alert("Failed to process the file. Please try again.");
+      e.target.value = "";
     }
   };
 
@@ -354,9 +374,12 @@ export default function ApplicationForm({ setCurrentPage }: any) {
       });
     } catch (error) {
       console.error("Submission error:", error);
-      setSubmitError(
-        error instanceof Error ? error.message : "Failed to submit application"
-      );
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to submit application";
+      setSubmitError(errorMessage);
+      toast.error("Submission failed", {
+        description: errorMessage,
+      });
       window.scrollTo({ top: 0, behavior: "smooth" });
     } finally {
       setIsSubmitting(false);
@@ -595,7 +618,7 @@ export default function ApplicationForm({ setCurrentPage }: any) {
                   Zip Code
                 </label>
                 <input
-                  type="text"
+                  type="number"
                   name="zip"
                   required
                   value={formData.zip}
@@ -1012,7 +1035,7 @@ export default function ApplicationForm({ setCurrentPage }: any) {
             </p>
           )}
           <p className="text-xs text-gray-600 mb-4">
-            Accepted formats: PDF, JPG, PNG (max file size: 5MB)
+            Accepted formats: PDF, JPG, PNG (max file size: 10MB)
           </p>
 
           <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6">
@@ -1098,7 +1121,33 @@ export default function ApplicationForm({ setCurrentPage }: any) {
                 : "bg-(--custom-color) hover:bg-(--custom-color-hover)"
             }`}
           >
-            {isSubmitting ? "Submitting..." : "Submit Application"}
+            {isSubmitting ? (
+              <span className="flex items-center gap-2">
+                <svg
+                  className="animate-spin h-5 w-5"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
+                </svg>
+                Processing...
+              </span>
+            ) : (
+              "Submit Application"
+            )}
           </button>
         </div>
       </form>
