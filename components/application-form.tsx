@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ChevronDownIcon } from "lucide-react";
 import { createMergedPDF } from "@/lib/pdf-utils";
-import { submitApplication } from "@/lib/actions";
+import { submitApplication, uploadPdfToR2 } from "@/lib/actions";
 import { Calendar } from "@/components/ui/calendar";
 import { useState, useRef, useEffect } from "react";
 import VerifyingModal from "@/components/verifying-modal";
@@ -321,7 +321,15 @@ export default function ApplicationForm({ setCurrentPage }: any) {
         throw new Error("Missing required documents");
       }
 
-      const documentPdfBase64 = await createMergedPDF(photoIdFile, canvas);
+      // Generate merged PDF file
+      const mergedPdfFile = await createMergedPDF(photoIdFile, canvas);
+
+      // Upload PDF to R2 storage
+      const uploadResult = await uploadPdfToR2(mergedPdfFile, formData.claimId);
+
+      if (!uploadResult.success || !uploadResult.url) {
+        throw new Error(uploadResult.error || "Failed to upload document");
+      }
 
       // Prepare data for submission
       const submissionData = {
@@ -330,7 +338,7 @@ export default function ApplicationForm({ setCurrentPage }: any) {
         filingDate: formData.filingDate.toISOString(),
         judgmentDate: formData.judgmentDate.toISOString(),
         bankVerified,
-        documentPdfBase64,
+        documentPdfUrl: uploadResult.url,
       };
 
       // Submit using server action

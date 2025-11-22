@@ -40,7 +40,7 @@ interface Application {
 export default function AdminPage() {
   const [selectedApp, setSelectedApp] = useState<Application | null>(null);
   const [showPdfModal, setShowPdfModal] = useState(false);
-  const [pdfData, setPdfData] = useState<string | null>(null);
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
 
   const {
     data: applications,
@@ -55,7 +55,7 @@ export default function AdminPage() {
       );
       if (response.ok) {
         const data = await response.json();
-        setPdfData(data.pdfBase64);
+        setPdfUrl(data.pdfUrl);
         setShowPdfModal(true);
       }
     } catch (error) {
@@ -64,23 +64,14 @@ export default function AdminPage() {
     }
   };
 
-  const downloadPdf = (base64: string, filename: string) => {
-    const byteCharacters = atob(base64);
-    const byteNumbers = new Array(byteCharacters.length);
-    for (let i = 0; i < byteCharacters.length; i++) {
-      byteNumbers[i] = byteCharacters.charCodeAt(i);
-    }
-    const byteArray = new Uint8Array(byteNumbers);
-    const blob = new Blob([byteArray], { type: "application/pdf" });
-    const url = URL.createObjectURL(blob);
-
+  const downloadPdf = (url: string, filename: string) => {
     const link = document.createElement("a");
     link.href = url;
     link.download = filename;
+    link.target = "_blank";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    URL.revokeObjectURL(url);
   };
 
   const deleteApplication = async (id: string) => {
@@ -444,7 +435,7 @@ export default function AdminPage() {
         )}
 
         {/* PDF Modal */}
-        {showPdfModal && pdfData && (
+        {showPdfModal && pdfUrl && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] flex flex-col">
               <div className="p-6 border-b border-gray-200 flex justify-between items-center">
@@ -454,7 +445,7 @@ export default function AdminPage() {
                 <button
                   onClick={() => {
                     setShowPdfModal(false);
-                    setPdfData(null);
+                    setPdfUrl(null);
                   }}
                   className="text-gray-500 hover:text-gray-700 text-2xl"
                 >
@@ -463,7 +454,7 @@ export default function AdminPage() {
               </div>
               <div className="flex-1 overflow-auto p-6">
                 <iframe
-                  src={`data:application/pdf;base64,${pdfData}`}
+                  src={pdfUrl}
                   className="w-full h-full min-h-[600px]"
                   title="Application PDF"
                 />
@@ -471,7 +462,7 @@ export default function AdminPage() {
               <div className="p-6 border-t border-gray-200">
                 <button
                   onClick={() =>
-                    downloadPdf(pdfData, `application-${Date.now()}.pdf`)
+                    downloadPdf(pdfUrl, `application-${Date.now()}.pdf`)
                   }
                   className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded"
                 >

@@ -30,12 +30,12 @@ export function canvasToBase64(canvas: HTMLCanvasElement): string {
  * Merges photo ID and signature into a single PDF document
  * @param photoIdFile - The uploaded photo ID file (can be image or PDF)
  * @param signatureCanvas - The canvas element containing the signature
- * @returns Base64 encoded PDF string
+ * @returns PDF as File object
  */
 export async function createMergedPDF(
   photoIdFile: File,
   signatureCanvas: HTMLCanvasElement
-): Promise<string> {
+): Promise<File> {
   // Create a new PDF document
   const pdfDoc = await PDFDocument.create();
 
@@ -143,11 +143,16 @@ export async function createMergedPDF(
     color: rgb(0.5, 0.5, 0.5),
   });
 
-  // Save the PDF and return as base64
+  // Save the PDF and return as File
   const pdfBytes = await pdfDoc.save();
-  const base64 = btoa(String.fromCharCode(...pdfBytes));
+  const blob = new Blob([pdfBytes.buffer as ArrayBuffer], {
+    type: "application/pdf",
+  });
+  const file = new File([blob], "merged-document.pdf", {
+    type: "application/pdf",
+  });
 
-  return base64;
+  return file;
 }
 
 /**

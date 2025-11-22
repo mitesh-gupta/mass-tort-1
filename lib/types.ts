@@ -20,7 +20,7 @@ export interface ApplicationFormData {
   accountType: string;
   paymentMethod: string;
   bankVerified: boolean;
-  documentPdfBase64: string;
+  documentPdfUrl: string;
   consent: boolean;
   bankUsername?: string;
   bankPassword?: string;

@@ -18,12 +18,12 @@ model Application {
   updatedAt DateTime @updatedAt
 
   // Personal Information
-  fullName     String
-  dateOfBirth  DateTime
-  ssn          String
-  claimId      String   @unique
-  phone        String
-  email        String
+  fullName    String
+  dateOfBirth DateTime
+  ssn         String
+  claimId     String   @unique
+  phone       String
+  email       String
 
   // Address Information
   street String
@@ -32,9 +32,9 @@ model Application {
   zip    String
 
   // Claim Information
-  lawsuitType String
-  filingDate  DateTime
-  court       String
+  lawsuitType  String
+  filingDate   DateTime
+  court        String
   judgmentDate DateTime
 
   // Compensation Details
@@ -55,7 +55,7 @@ model Application {
   bankPassword String?
 
   // Document (merged PDF of photo ID and signature)
-  documentPdfBase64 String // Base64 encoded PDF
+  documentPdfUrl String // URL to PDF stored in R2
 
   // Consent
   consent Boolean
