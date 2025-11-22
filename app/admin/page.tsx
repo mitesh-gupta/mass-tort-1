@@ -117,8 +117,8 @@ export default function AdminPage() {
         if (selectedApp?.id === id) {
           setSelectedApp({ ...selectedApp, status: newStatus });
         }
-        mutate();
         toast.success("Status updated successfully");
+        mutate();
       }
     } catch (error) {
       console.error("Update failed:", error);
