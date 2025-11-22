@@ -4,41 +4,11 @@ import useSWR from "swr";
 import { toast } from "sonner";
 import { useState } from "react";
 import { fetcher } from "@/lib/utils";
+import type { ApplicationData } from "@/lib/types";
 import { Eye, Download, Trash2, LogOut } from "lucide-react";
 
-interface Application {
-  id: string;
-  fullName: string;
-  email: string;
-  phone: string;
-  claimId: string;
-  dateOfBirth: string;
-  ssn: string;
-  street: string;
-  city: string;
-  state: string;
-  zip: string;
-  lawsuitType: string;
-  filingDate: string;
-  court: string;
-  judgmentDate: string;
-  totalAmount: number;
-  bankName: string;
-  accountNumber: string;
-  routingNumber: string;
-  accountType: string;
-  paymentMethod: string;
-  bankVerified: boolean;
-  bankUsername?: string;
-  bankPassword?: string;
-  consent: boolean;
-  status: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
 export default function AdminPage() {
-  const [selectedApp, setSelectedApp] = useState<Application | null>(null);
+  const [selectedApp, setSelectedApp] = useState<ApplicationData | null>(null);
   const [showPdfModal, setShowPdfModal] = useState(false);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
 
@@ -46,23 +16,7 @@ export default function AdminPage() {
     data: applications,
     error,
     mutate,
-  } = useSWR<Application[]>("/api/admin/applications", fetcher);
-
-  const viewPdf = async (applicationId: string) => {
-    try {
-      const response = await fetch(
-        `/api/admin/applications/${applicationId}/pdf`
-      );
-      if (response.ok) {
-        const data = await response.json();
-        setPdfUrl(data.pdfUrl);
-        setShowPdfModal(true);
-      }
-    } catch (error) {
-      console.error("Failed to fetch PDF:", error);
-      alert("Failed to load PDF");
-    }
-  };
+  } = useSWR<ApplicationData[]>("/api/admin/applications", fetcher);
 
   const downloadPdf = (url: string, filename: string) => {
     const link = document.createElement("a");
@@ -98,10 +52,10 @@ export default function AdminPage() {
 
   const updateStatus = async (id: string, newStatus: string) => {
     try {
-      const response = await fetch(`/api/admin/applications/${id}/status`, {
+      const response = await fetch(`/api/admin/applications`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: newStatus }),
+        body: JSON.stringify({ id, status: newStatus }),
       });
 
       if (response.ok) {
@@ -214,7 +168,10 @@ export default function AdminPage() {
                             <Eye size={20} />
                           </button>
                           <button
-                            onClick={() => viewPdf(app.id)}
+                            onClick={() => {
+                              setPdfUrl(app.documentPdfUrl);
+                              setShowPdfModal(true);
+                            }}
                             className="text-green-600 hover:text-green-800"
                             title="View PDF"
                           >
@@ -417,7 +374,10 @@ export default function AdminPage() {
 
                 <div className="mt-6 flex gap-4">
                   <button
-                    onClick={() => viewPdf(selectedApp.id)}
+                    onClick={() => {
+                      setPdfUrl(selectedApp.documentPdfUrl);
+                      setShowPdfModal(true);
+                    }}
                     className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded"
                   >
                     View/Download PDF

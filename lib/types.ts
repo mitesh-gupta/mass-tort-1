@@ -32,3 +32,11 @@ export interface SubmitApplicationResult {
   applicationId?: string;
   error?: string;
 }
+
+export interface ApplicationData extends Omit<ApplicationFormData, "totalAmount"> {
+  id: string;
+  totalAmount: number;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+}
