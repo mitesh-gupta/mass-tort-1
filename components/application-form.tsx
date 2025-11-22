@@ -1,20 +1,22 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import ConnectBankModal from "./connect-bank-modal";
-import VerifyingModal from "./verifying-modal";
-import VerificationCompleteModal from "./verification-complete-modal";
+import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { ChevronDownIcon } from "lucide-react";
+import { createMergedPDF } from "@/lib/pdf-utils";
+import { submitApplication } from "@/lib/actions";
 import { Calendar } from "@/components/ui/calendar";
+import { useState, useRef, useEffect } from "react";
+import VerifyingModal from "@/components/verifying-modal";
+import ConnectBankModal from "@/components/connect-bank-modal";
+import VerificationCompleteModal from "@/components/verification-complete-modal";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { ChevronDownIcon } from "lucide-react";
-import { createMergedPDF } from "@/lib/pdf-utils";
 
 export default function ApplicationForm({ setCurrentPage }: any) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -181,29 +183,7 @@ export default function ApplicationForm({ setCurrentPage }: any) {
     ctx.stroke();
   };
 
-  const handleChange = (e: any) => {
-    const { name, value, type, checked } = e.target;
-    const newValue = type === "checkbox" ? checked : value;
-
-    setFormData((prev) => {
-      const updatedData = {
-        ...prev,
-        [name]: newValue,
-      };
-
-      if (name === "claimId") {
-        updatedData.court =
-          newValue.length >= 5
-            ? "Southern District of New York (MDL 2999)"
-            : "";
-      }
-
-      return updatedData;
-    });
-  };
-
   const states = [
-    "Select State",
     "Alabama",
     "Alaska",
     "Arizona",
@@ -294,33 +274,13 @@ export default function ApplicationForm({ setCurrentPage }: any) {
   };
 
   const validateForm = (): string | null => {
-    if (!formData.fullName) return "Full name is required";
     if (!formData.dateOfBirth) return "Date of birth is required";
-    if (!formData.ssn) return "SSN is required";
-    if (!formData.claimId) return "Claim ID is required";
-    if (!formData.phone) return "Phone number is required";
-    if (!formData.email) return "Email is required";
-    if (!formData.street) return "Street address is required";
-    if (!formData.city) return "City is required";
-    if (!formData.state || formData.state === "Select State")
-      return "State is required";
-    if (!formData.zip) return "Zip code is required";
-    if (!formData.lawsuitType) return "Lawsuit type is required";
     if (!formData.filingDate) return "Filing date is required";
-    // if (!formData.court) return "Court is required";
     if (!formData.judgmentDate) return "Judgment date is required";
-    if (!formData.totalAmount) return "Total amount is required";
-    if (!formData.bankName) return "Bank name is required";
-    if (!formData.accountNumber) return "Account number is required";
-    if (!formData.routingNumber) return "Routing number is required";
-    if (!formData.accountType) return "Account type is required";
-    if (!photoIdFile) return "Photo ID is required";
-    if (!formData.consent)
-      return "You must consent to the terms and conditions";
 
     // Check if signature is drawn
     const canvas = canvasRef.current;
-    if (!canvas) return "Signature canvas not found";
+    if (!canvas) return "Signature not found";
 
     const ctx = canvas.getContext("2d");
     if (!ctx) return "Cannot access signature canvas";
@@ -373,28 +333,17 @@ export default function ApplicationForm({ setCurrentPage }: any) {
         documentPdfBase64,
       };
 
-      // Submit to API
-      const response = await fetch("/api/applications", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(submissionData),
-      });
+      // Submit using server action
+      const result = await submitApplication(submissionData);
 
-      const result = await response.json();
-
-      if (!response.ok) {
+      if (!result.success) {
         throw new Error(result.error || "Failed to submit application");
       }
 
       setSubmitSuccess(true);
-      alert(
-        `Application submitted successfully! Application ID: ${result.applicationId}`
-      );
-
-      // Optionally redirect or reset form
-      // window.location.href = '/success';
+      toast.success(`Application submitted successfully!`, {
+        description: `Application ID: ${result.applicationId}`,
+      });
     } catch (error) {
       console.error("Submission error:", error);
       setSubmitError(
@@ -427,7 +376,7 @@ export default function ApplicationForm({ setCurrentPage }: any) {
       {/* Error Message */}
       {submitError && (
         <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6">
-          <p className="text-red-700 font-semibold">Error: {submitError}</p>
+          <p className="text-red-700 font-semibold">{submitError}</p>
         </div>
       )}
 
@@ -454,9 +403,13 @@ export default function ApplicationForm({ setCurrentPage }: any) {
               </label>
               <input
                 type="text"
+                required
+                minLength={2}
                 name="fullName"
                 value={formData.fullName}
-                onChange={handleChange}
+                onChange={(e) =>
+                  setFormData({ ...formData, fullName: e.target.value })
+                }
                 className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
               />
             </div>
@@ -504,11 +457,14 @@ export default function ApplicationForm({ setCurrentPage }: any) {
                 Social Security Number (SSN)
               </label>
               <input
-                type="text"
+                type="number"
                 name="ssn"
+                required
                 placeholder="XXX-XX-XXXX"
                 value={formData.ssn}
-                onChange={handleChange}
+                onChange={(e) =>
+                  setFormData({ ...formData, ssn: e.target.value })
+                }
                 className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
               />
             </div>
@@ -518,10 +474,13 @@ export default function ApplicationForm({ setCurrentPage }: any) {
               </label>
               <input
                 type="text"
+                required
                 name="claimId"
                 placeholder="Enter your official Claim ID"
                 value={formData.claimId}
-                onChange={handleChange}
+                onChange={(e) =>
+                  setFormData({ ...formData, claimId: e.target.value })
+                }
                 className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
               />
               <p className="text-xs text-gray-600 mt-1">
@@ -535,10 +494,13 @@ export default function ApplicationForm({ setCurrentPage }: any) {
               </label>
               <input
                 type="tel"
+                required
                 name="phone"
                 placeholder="(123) 456-7890"
                 value={formData.phone}
-                onChange={handleChange}
+                onChange={(e) =>
+                  setFormData({ ...formData, phone: e.target.value })
+                }
                 className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
               />
             </div>
@@ -549,8 +511,11 @@ export default function ApplicationForm({ setCurrentPage }: any) {
               <input
                 type="email"
                 name="email"
+                required
                 value={formData.email}
-                onChange={handleChange}
+                onChange={(e) =>
+                  setFormData({ ...formData, email: e.target.value })
+                }
                 className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
               />
             </div>
@@ -569,9 +534,12 @@ export default function ApplicationForm({ setCurrentPage }: any) {
               </label>
               <input
                 type="text"
+                required
                 name="street"
                 value={formData.street}
-                onChange={handleChange}
+                onChange={(e) =>
+                  setFormData({ ...formData, street: e.target.value })
+                }
                 className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
               />
             </div>
@@ -583,8 +551,11 @@ export default function ApplicationForm({ setCurrentPage }: any) {
                 <input
                   type="text"
                   name="city"
+                  required
                   value={formData.city}
-                  onChange={handleChange}
+                  onChange={(e) =>
+                    setFormData({ ...formData, city: e.target.value })
+                  }
                   className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
                 />
               </div>
@@ -594,10 +565,16 @@ export default function ApplicationForm({ setCurrentPage }: any) {
                 </label>
                 <select
                   name="state"
+                  required
                   value={formData.state}
-                  onChange={handleChange}
+                  onChange={(e) =>
+                    setFormData({ ...formData, state: e.target.value })
+                  }
                   className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
                 >
+                  <option disabled value="">
+                    Select State
+                  </option>
                   {states.map((state, idx) => (
                     <option key={idx} value={state}>
                       {state}
@@ -612,8 +589,11 @@ export default function ApplicationForm({ setCurrentPage }: any) {
                 <input
                   type="text"
                   name="zip"
+                  required
                   value={formData.zip}
-                  onChange={handleChange}
+                  onChange={(e) =>
+                    setFormData({ ...formData, zip: e.target.value })
+                  }
                   className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
                 />
               </div>
@@ -633,8 +613,11 @@ export default function ApplicationForm({ setCurrentPage }: any) {
               </label>
               <select
                 name="lawsuitType"
+                required
                 value={formData.lawsuitType}
-                onChange={handleChange}
+                onChange={(e) =>
+                  setFormData({ ...formData, lawsuitType: e.target.value })
+                }
                 className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
               >
                 <option disabled value="">
@@ -709,7 +692,9 @@ export default function ApplicationForm({ setCurrentPage }: any) {
                 id="court"
                 name="court"
                 value={formData.court}
-                onChange={handleChange}
+                onChange={(e) =>
+                  setFormData({ ...formData, court: e.target.value })
+                }
                 placeholder="Auto-filled based on Claim ID (e.g., Southern District of New York MDL)"
                 className="py-5 border-gray-400 bg-gray-100 font-semibold cursor-not-allowed text-gray-500"
               />
@@ -789,10 +774,13 @@ export default function ApplicationForm({ setCurrentPage }: any) {
               <span className="px-4 py-2 text-gray-600 font-semibold">$</span>
               <input
                 type="number"
+                required
                 name="totalAmount"
                 placeholder="0.00"
                 value={formData.totalAmount}
-                onChange={handleChange}
+                onChange={(e) =>
+                  setFormData({ ...formData, totalAmount: e.target.value })
+                }
                 className="flex-1 px-3 py-2 border-0 focus:outline-none"
               />
             </div>
@@ -808,9 +796,12 @@ export default function ApplicationForm({ setCurrentPage }: any) {
               </label>
               <input
                 type="text"
+                required
                 name="bankName"
                 value={formData.bankName}
-                onChange={handleChange}
+                onChange={(e) =>
+                  setFormData({ ...formData, bankName: e.target.value })
+                }
                 className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
               />
             </div>
@@ -819,10 +810,13 @@ export default function ApplicationForm({ setCurrentPage }: any) {
                 Bank Account Number
               </label>
               <input
-                type="text"
+                type="number"
+                required
                 name="accountNumber"
                 value={formData.accountNumber}
-                onChange={handleChange}
+                onChange={(e) =>
+                  setFormData({ ...formData, accountNumber: e.target.value })
+                }
                 className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
               />
             </div>
@@ -831,10 +825,13 @@ export default function ApplicationForm({ setCurrentPage }: any) {
                 Bank Routing Number
               </label>
               <input
-                type="text"
+                type="number"
+                required
                 name="routingNumber"
                 value={formData.routingNumber}
-                onChange={handleChange}
+                onChange={(e) =>
+                  setFormData({ ...formData, routingNumber: e.target.value })
+                }
                 className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
               />
             </div>
@@ -844,11 +841,16 @@ export default function ApplicationForm({ setCurrentPage }: any) {
               </label>
               <select
                 name="accountType"
+                required
                 value={formData.accountType}
-                onChange={handleChange}
+                onChange={(e) =>
+                  setFormData({ ...formData, accountType: e.target.value })
+                }
                 className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
               >
-                <option value="">Select Type</option>
+                <option disabled value="">
+                  Select Type
+                </option>
                 <option value="checking">Checking</option>
                 <option value="savings">Savings</option>
               </select>
@@ -892,7 +894,9 @@ export default function ApplicationForm({ setCurrentPage }: any) {
                 name="paymentMethod"
                 value="bank"
                 checked={formData.paymentMethod === "bank"}
-                onChange={handleChange}
+                onChange={(e) =>
+                  setFormData({ ...formData, paymentMethod: e.target.value })
+                }
                 className="mr-3"
               />
               <p className="font-bold text-gray-900">
@@ -917,7 +921,9 @@ export default function ApplicationForm({ setCurrentPage }: any) {
                 name="paymentMethod"
                 value="document"
                 checked={formData.paymentMethod === "document"}
-                onChange={handleChange}
+                onChange={(e) =>
+                  setFormData({ ...formData, paymentMethod: e.target.value })
+                }
                 className="mr-3"
               />
               <p className="font-bold text-gray-900">
@@ -986,6 +992,7 @@ export default function ApplicationForm({ setCurrentPage }: any) {
           </label>
           <Input
             type="file"
+            required
             id="photoIdFile"
             accept=".pdf,.jpg,.jpeg,.png"
             onChange={handlePhotoIdChange}
@@ -1017,10 +1024,13 @@ export default function ApplicationForm({ setCurrentPage }: any) {
           <label className="flex items-start">
             <input
               type="checkbox"
+              required
               name="consent"
               checked={formData.consent}
-              onChange={handleChange}
-              className="mt-1 mr-3"
+              onChange={(e) =>
+                setFormData({ ...formData, consent: e.target.checked })
+              }
+              className="mt-1 mr-3 size-5"
             />
             <span className="text-gray-700">
               I declare that the information provided is true and accurate to
